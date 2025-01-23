@@ -1,0 +1,7 @@
+.env
+.gitignore
+__pycache__/
+Dockerfile
+fly-secrets-injector.sh
+fly.toml
+wg-local-dev.conf

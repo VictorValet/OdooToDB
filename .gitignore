@@ -1,0 +1,5 @@
+.env
+__pycache__/
+fly-secrets-injector.sh
+fly.toml
+wg-local-dev.conf
