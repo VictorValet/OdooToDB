@@ -1,5 +1,8 @@
 apscheduler
+bcrypt
 fastapi
 psycopg2-binary
 python-dotenv
+python-jose
+python-multipart
 uvicorn
