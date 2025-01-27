@@ -6,7 +6,7 @@ import time
 from apscheduler.schedulers.background import BackgroundScheduler
 
 scheduler = BackgroundScheduler()
-scheduler.add_job(odooToDB.odooToDB, 'interval', seconds=30)
+scheduler.add_job(odooToDB.main, 'interval', seconds=30)
 scheduler.start()
 
 def exit(signum, frame):

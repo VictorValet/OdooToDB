@@ -5,20 +5,8 @@ import xmlrpc.client
 from dotenv import load_dotenv
 from models import Contact, Invoice
 
-def odooToDB():
-    load_dotenv()
-
-    url = os.getenv('ODOO_URL')
-    db = os.getenv('ODOO_DB')
-    username = os.getenv('ODOO_USER')
-    password = os.getenv('ODOO_PASSWORD')
-
-    # Fetch contacts and invoices from Odoo
-    common = xmlrpc.client.ServerProxy('{}/xmlrpc/2/common'.format(url))
-    uid = common.authenticate(db, username, password, {})
-    models = xmlrpc.client.ServerProxy('{}/xmlrpc/2/object'.format(url))
-
-    contact_set = models.execute_kw(
+def getContactSet(db, uid, password, models):
+    return models.execute_kw(
         db,
         uid,
         password,
@@ -34,7 +22,9 @@ def odooToDB():
             'contact_address',
             'is_company'
     ]})
-    invoice_set = models.execute_kw(
+
+def getInvoiceSet(db, uid, password, models):
+    return models.execute_kw(
         db,
         uid,
         password,
@@ -51,30 +41,42 @@ def odooToDB():
             'amount_total'
     ]})
 
-    # Fetch existing contact IDs from the database
-    contact_table_ids = utils_db.get_ids(Contact)
-    invoice_table_ids = utils_db.get_ids(Invoice)
-
-    # Fetch contact IDs from the scrapped data
-    contact_set_ids = {contact['id'] for contact in contact_set}
-    invoice_set_ids = {invoice['id'] for invoice in invoice_set}
-
-    # Insert, update or delete contacts and invoices
+def createOrUpdateItems(contact_set, invoice_set):
     for contact in contact_set:
         utils_db.create_or_update(Contact, contact)
-
-    for contact in contact_table_ids:
-        if contact not in contact_set_ids:
-            utils_db.delete(Contact, contact)
-
     for invoice in invoice_set:
         invoice['user_id'] = invoice['user_id'][0]
         invoice['partner_id'] = invoice['partner_id'][0]
         utils_db.create_or_update(Invoice, invoice)
 
-    for invoice in invoice_table_ids:
-        if invoice not in invoice_set_ids:
+def deleteItems(contact_set, invoice_set):
+    contact_ids_db = utils_db.get_ids(Contact)
+    invoice_ids_db = utils_db.get_ids(Invoice)
+    contact_ids_odoo = {contact['id'] for contact in contact_set}
+    invoice_ids_odoo = {invoice['id'] for invoice in invoice_set}
+
+    for contact in contact_ids_db:
+        if contact not in contact_ids_odoo:
+            utils_db.delete(Contact, contact)
+    for invoice in invoice_ids_db:
+        if invoice not in invoice_ids_odoo:
             utils_db.delete(Invoice, invoice)
 
+def main():
+    load_dotenv()
+    url = os.getenv('ODOO_URL')
+    db = os.getenv('ODOO_DB')
+    username = os.getenv('ODOO_USER')
+    password = os.getenv('ODOO_PASSWORD')
+
+    common = xmlrpc.client.ServerProxy('{}/xmlrpc/2/common'.format(url))
+    uid = common.authenticate(db, username, password, {})
+    models = xmlrpc.client.ServerProxy('{}/xmlrpc/2/object'.format(url))
+    
+    contact_set = getContactSet(db, uid, password, models)
+    invoice_set = getInvoiceSet(db, uid, password, models)
+    createOrUpdateItems(contact_set, invoice_set)
+    deleteItems(contact_set, invoice_set)
+
 if __name__ == '__main__':
-    odooToDB()
+    main()
