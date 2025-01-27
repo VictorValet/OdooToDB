@@ -23,7 +23,7 @@ class Contact(Base):
     contact_address: Mapped[str]
     is_company: Mapped[bool]
     def __repr__(self) -> str:
-        return f"Address(id={self.id!r}, name={self.name!r})"
+        return f"Contact(id={self.id!r}, name={self.name!r})"
 
 class Invoice(Base):
     __tablename__ = "invoices"

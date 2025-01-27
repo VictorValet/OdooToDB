@@ -1,7 +1,7 @@
 import odooToDB
-import time
 import signal
 import sys
+import time
 
 from apscheduler.schedulers.background import BackgroundScheduler
 

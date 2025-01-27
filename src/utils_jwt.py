@@ -1,9 +1,9 @@
 import os
 
+from datetime import datetime, timedelta
 from dotenv import load_dotenv
 from fastapi import HTTPException
 from jose import JWTError, jwt
-from datetime import datetime, timedelta
 
 load_dotenv()
 SECRET_KEY = os.getenv('JWT_SECRET_KEY')

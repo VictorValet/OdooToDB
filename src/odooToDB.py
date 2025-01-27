@@ -51,9 +51,6 @@ def odooToDB():
             'amount_total'
     ]})
 
-    # Ensure tables exist
-    utils_db.create_tables()
-
     # Fetch existing contact IDs from the database
     contact_table_ids = utils_db.get_ids(Contact)
     invoice_table_ids = utils_db.get_ids(Invoice)
