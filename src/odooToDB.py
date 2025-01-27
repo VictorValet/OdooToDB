@@ -1,12 +1,12 @@
-from dotenv import load_dotenv
 import os
-import utils
+import utils_db
 import xmlrpc.client
+
+from dotenv import load_dotenv
+from models import Contact, Invoice
 
 def odooToDB():
     load_dotenv()
-
-    conn =  utils.get_psql_conn()
 
     url = os.getenv('ODOO_URL')
     db = os.getenv('ODOO_DB')
@@ -50,21 +50,13 @@ def odooToDB():
             'invoice_date_due',
             'amount_total'
     ]})
-    # TODO: data validation
-    # print(json.dumps(sorted(list(contact_set), key=lambda x: x['id']), indent=4))
-    # print(json.dumps(sorted(list(invoice_set), key=lambda x: x['id']), indent=4))
 
     # Ensure tables exist
-    cursor = conn.cursor()
-    cursor.execute("CREATE TABLE IF NOT EXISTS contacts (id SERIAL PRIMARY KEY, name VARCHAR(255), email VARCHAR(255), phone VARCHAR(255), mobile VARCHAR(255), contact_address TEXT, is_company BOOLEAN)")
-    cursor.execute("CREATE TABLE IF NOT EXISTS invoices (id SERIAL PRIMARY KEY, name VARCHAR(255), user_id INTEGER, partner_id INTEGER, date DATE, invoice_date_due DATE, amount_total FLOAT)")
-    conn.commit()
+    utils_db.create_tables()
 
     # Fetch existing contact IDs from the database
-    cursor.execute("SELECT id FROM contacts")
-    contact_table_ids = {row[0] for row in cursor.fetchall()}
-    cursor.execute("SELECT id FROM invoices")
-    invoice_table_ids = {row[0] for row in cursor.fetchall()}
+    contact_table_ids = utils_db.get_ids(Contact)
+    invoice_table_ids = utils_db.get_ids(Invoice)
 
     # Fetch contact IDs from the scrapped data
     contact_set_ids = {contact['id'] for contact in contact_set}
@@ -72,49 +64,20 @@ def odooToDB():
 
     # Insert, update or delete contacts and invoices
     for contact in contact_set:
-        if not contact['id'] in contact_table_ids:
-            print("Inserting contact", contact['id'])
-            cursor.execute(
-                "INSERT INTO contacts (id, name, email, phone, mobile, contact_address, is_company) VALUES (%s, %s, %s, %s, %s, %s, %s)",
-                (contact['id'], contact['name'], contact['email'], contact['phone'], contact['mobile'], contact['contact_address'], contact['is_company'])
-            )
-        #TODO: check if the contact has changed
-        else:
-            print("Updating contact", contact['id'])
-            cursor.execute(
-                "UPDATE contacts SET name = %s, email = %s, phone = %s, mobile = %s, contact_address = %s, is_company = %s WHERE id = %s",
-                (contact['name'], contact['email'], contact['phone'], contact['mobile'], contact['contact_address'], contact['is_company'], contact['id'])
-            )
+        utils_db.create_or_update(Contact, contact)
 
     for contact in contact_table_ids:
         if contact not in contact_set_ids:
-            print("Deleting contact", contact)
-            cursor.execute("DELETE FROM contacts WHERE id = %s", (contact,))
+            utils_db.delete(Contact, contact)
 
     for invoice in invoice_set:
-        if not invoice['id'] in invoice_table_ids:
-            print("Inserting invoice", invoice['id'])
-            cursor.execute(
-                "INSERT INTO invoices (id, name, user_id, partner_id, date, invoice_date_due, amount_total) VALUES (%s, %s, %s, %s, %s, %s, %s)",
-                (invoice['id'], invoice['name'], invoice['user_id'][0], invoice['partner_id'][0], invoice['date'], invoice['invoice_date_due'], invoice['amount_total'])
-            )
-        #TODO: check if the contact has changed
-        else:
-            print("Updating invoice", invoice['id'])
-            cursor.execute(
-                "UPDATE invoices SET name = %s, user_id = %s, partner_id = %s, date = %s, invoice_date_due = %s, amount_total = %s WHERE id = %s",
-                (invoice['name'], invoice['user_id'][0], invoice['partner_id'][0], invoice['date'], invoice['invoice_date_due'], invoice['amount_total'], invoice['id'])
-            )
+        invoice['user_id'] = invoice['user_id'][0]
+        invoice['partner_id'] = invoice['partner_id'][0]
+        utils_db.create_or_update(Invoice, invoice)
 
     for invoice in invoice_table_ids:
         if invoice not in invoice_set_ids:
-            print("Deleting invoice", invoice)
-            cursor.execute("DELETE FROM invoices WHERE id = %s", (invoice,))
-
-    # Commit the changes, close the cursor and the connection
-    conn.commit()
-    cursor.close()
-    conn.close()
+            utils_db.delete(Invoice, invoice)
 
 if __name__ == '__main__':
     odooToDB()

@@ -1,8 +1,9 @@
-from apscheduler.schedulers.background import BackgroundScheduler
 import odooToDB
 import time
 import signal
 import sys
+
+from apscheduler.schedulers.background import BackgroundScheduler
 
 scheduler = BackgroundScheduler()
 scheduler.add_job(odooToDB.odooToDB, 'interval', seconds=30)

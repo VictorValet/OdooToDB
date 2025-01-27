@@ -5,4 +5,5 @@ psycopg2-binary
 python-dotenv
 python-jose
 python-multipart
+sqlalchemy
 uvicorn
