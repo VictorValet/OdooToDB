@@ -1,8 +1,4 @@
 __pycache__/
-tools/
-.dockerignore
 .env
-Dockerfile
-fly-secrets-injector.sh
 fly.toml
 wg-local-dev.conf

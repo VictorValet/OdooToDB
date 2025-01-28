@@ -1,0 +1,7 @@
+__pycache__/
+.gitignore
+Dockerfile
+fly-secrets-injector.sh
+fly.toml
+README.md
+wg-local-dev.conf
